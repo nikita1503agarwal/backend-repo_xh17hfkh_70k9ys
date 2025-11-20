@@ -1,48 +1,51 @@
 """
-Database Schemas
+Database Schemas for Size Recommendation App
 
-Define your MongoDB collection schemas here using Pydantic models.
-These schemas are used for data validation in your application.
-
-Each Pydantic model represents a collection in your database.
-Model name is converted to lowercase for the collection name:
-- User -> "user" collection
-- Product -> "product" collection
-- BlogPost -> "blogs" collection
+Each Pydantic model represents a collection in MongoDB. The collection name is the lowercase of the class name.
 """
-
 from pydantic import BaseModel, Field
-from typing import Optional
+from typing import Optional, List, Literal
 
-# Example schemas (replace with your own):
 
 class User(BaseModel):
-    """
-    Users collection schema
-    Collection name: "user" (lowercase of class name)
-    """
-    name: str = Field(..., description="Full name")
     email: str = Field(..., description="Email address")
-    address: str = Field(..., description="Address")
-    age: Optional[int] = Field(None, ge=0, le=120, description="Age in years")
-    is_active: bool = Field(True, description="Whether user is active")
+    consent: bool = Field(False, description="User consent for data processing")
+    country: Optional[str] = Field(None, description="Country for privacy jurisdiction checks")
 
-class Product(BaseModel):
-    """
-    Products collection schema
-    Collection name: "product" (lowercase of class name)
-    """
-    title: str = Field(..., description="Product title")
-    description: Optional[str] = Field(None, description="Product description")
-    price: float = Field(..., ge=0, description="Price in dollars")
-    category: str = Field(..., description="Product category")
-    in_stock: bool = Field(True, description="Whether product is in stock")
 
-# Add your own schemas here:
-# --------------------------------------------------
+class BodyProfile(BaseModel):
+    user_id: Optional[str] = Field(None, description="Reference to user")
+    height_cm: Optional[float] = Field(None, ge=50, le=250)
+    weight_kg: Optional[float] = Field(None, ge=20, le=300)
+    chest_cm: Optional[float] = Field(None, ge=40, le=200)
+    waist_cm: Optional[float] = Field(None, ge=30, le=180)
+    hips_cm: Optional[float] = Field(None, ge=40, le=200)
+    inseam_cm: Optional[float] = Field(None, ge=30, le=120)
+    shoulder_cm: Optional[float] = Field(None, ge=20, le=80)
+    computed_from_image: bool = Field(False)
 
-# Note: The Flames database viewer will automatically:
-# 1. Read these schemas from GET /schema endpoint
-# 2. Use them for document validation when creating/editing
-# 3. Handle all database operations (CRUD) directly
-# 4. You don't need to create any database endpoints!
+
+class Garment(BaseModel):
+    brand: str
+    category: Literal[
+        "tshirt",
+        "shirt",
+        "hoodie",
+        "jacket",
+        "pants",
+        "jeans",
+        "dress",
+        "skirt",
+    ]
+    size_chart: dict = Field(
+        ..., description="Map size label -> required body measurements (cm)"
+    )
+
+
+class Recommendation(BaseModel):
+    user_id: Optional[str] = None
+    brand: str
+    category: str
+    suggested_size: str
+    confidence: float = Field(..., ge=0, le=1)
+    details: dict
